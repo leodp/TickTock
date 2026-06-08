@@ -1,0 +1,17 @@
+# Gradle
+.gradle/
+**/build/
+
+# IDE
+.vscode/
+.idea/
+
+# Local machine configuration
+local.properties
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Keep distributable artifact
+!TickTock.apk

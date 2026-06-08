@@ -1,0 +1,7 @@
+<resources>
+    <color name="ticktock_white">#FFFFFF</color>
+    <color name="ticktock_black">#000000</color>
+    <color name="ticktock_blue">#0A46B3</color>
+    <color name="ticktock_green">#1E9F45</color>
+    <color name="ticktock_red">#CC2B2B</color>
+</resources>

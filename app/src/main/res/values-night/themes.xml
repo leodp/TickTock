@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.TickTock" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/ticktock_blue</item>
+        <item name="colorOnPrimary">@color/ticktock_white</item>
+        <item name="android:windowBackground">@color/ticktock_white</item>
+    </style>
+</resources>
