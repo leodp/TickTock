@@ -32,7 +32,8 @@ The latest packaged APK is stored at [TickTock.apk](TickTock.apk).
 - Primary source and releases are on GitHub.
 - Latest release package is published in this repository.
 - F-Droid listing text metadata is available in [fastlane/metadata/android/en-US](fastlane/metadata/android/en-US).
-- The app can be released on F-Droid while keeping source files on GitHub.
+- F-Droid submission package is available in [fdroid](fdroid).
+- First F-Droid inclusion is manual, then updates can be tracked from GitHub tags.
 
 ## License
 
