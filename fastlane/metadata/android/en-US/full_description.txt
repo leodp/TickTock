@@ -1,0 +1,22 @@
+TickTock is an open-source Android app that helps set the beat of a pendulum clock.
+
+KEY FEATURES:
+
+- Real-time beat tracking from microphone audio
+- Period measurement in milliseconds
+- Asymmetry measurement in milliseconds and percent
+- Gauge visualization from -25% to +25%
+- Color-coded asymmetry indicator for quick feedback
+- Start/Stop acquisition with live status text
+
+USAGE:
+
+1. Set the initial guess period (default 1200 ms)
+2. Tap Start and grant microphone permission
+3. Wait while TickTock locks to the beat
+4. Read Period, Asymmetry [ms], and Asymmetry [%]
+
+OPEN SOURCE:
+
+Licensed under GNU GPL v3.
+Source code: https://github.com/leodp/TickTock

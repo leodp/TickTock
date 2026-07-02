@@ -1,20 +1,16 @@
-# F-Droid Submission (GitHub Source)
+# F-Droid Notes (GitHub Source)
 
-TickTock source code and releases remain on GitHub:
+TickTock follows the same repository style as Fencing_scores:
+
+- Source and releases remain on GitHub.
+- App listing text is stored in-repo using Fastlane metadata.
+
+## Metadata Location
+
+- fastlane/metadata/android/en-US/title.txt
+- fastlane/metadata/android/en-US/short_description.txt
+- fastlane/metadata/android/en-US/full_description.txt
+
+## Repository Source
+
 - https://github.com/leodp/TickTock
-
-F-Droid can build from GitHub source once app metadata is merged into the F-Droid metadata repository.
-
-## Prepared File In This Repository
-
-- metadata/com.ticktock.app.yml
-
-## Final Submission Step
-
-1. Submit metadata/com.ticktock.app.yml to fdroiddata.
-2. After review and merge, F-Droid builds and publishes TickTock from GitHub source.
-
-## Notes
-
-- This project stays hosted on GitHub.
-- F-Droid indexing is managed separately by the F-Droid metadata process.
