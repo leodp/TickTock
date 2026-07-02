@@ -21,13 +21,15 @@
 
         <TextView
             android:id="@+id/guessLabel"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="Initial guess period"
+            android:text="Initial guess period [ms]"
             android:textColor="@color/ticktock_blue"
+            android:textAlignment="center"
             android:textSize="18sp"
             android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/titleText" />
 
@@ -35,6 +37,7 @@
             android:id="@+id/guessInput"
             android:layout_width="110dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
             android:background="@drawable/border_box"
             android:ems="6"
             android:gravity="center"
@@ -42,32 +45,23 @@
             android:text="1200"
             android:textColor="@color/ticktock_blue"
             android:textSize="18sp"
-            app:layout_constraintBaseline_toBaselineOf="@id/guessLabel"
-            app:layout_constraintStart_toEndOf="@id/guessLabel" />
-
-        <TextView
-            android:id="@+id/guessUnit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:text="ms"
-            android:textColor="@color/ticktock_blue"
-            android:textSize="18sp"
-            app:layout_constraintBaseline_toBaselineOf="@id/guessInput"
-            app:layout_constraintStart_toEndOf="@id/guessInput" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/guessLabel" />
 
         <Button
             android:id="@+id/startButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="73dp"
             android:layout_marginTop="10dp"
             android:backgroundTint="@color/ticktock_blue"
             android:text="Start"
+            android:gravity="center"
             android:textColor="@color/ticktock_white"
             android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/guessLabel" />
+            app:layout_constraintTop_toBottomOf="@id/guessInput" />
 
         <com.ticktock.app.GaugeView
             android:id="@+id/gaugeView"
@@ -82,8 +76,8 @@
             android:id="@+id/asymmetryPercentText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:background="@drawable/border_box"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/metric_box"
             android:padding="8dp"
             android:text="Asymmetry [%]\n--"
             android:textAlignment="center"
@@ -95,13 +89,13 @@
             app:layout_constraintTop_toBottomOf="@id/gaugeView" />
 
         <TextView
-            android:id="@+id/periodText"
+            android:id="@+id/asymmetryMsText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:background="@drawable/border_box"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/metric_box"
             android:padding="8dp"
-            android:text="Period\n-- ms"
+            android:text="Asymmetry [ms]\n--"
             android:textAlignment="center"
             android:textColor="@color/ticktock_blue"
             android:textSize="17sp"
@@ -110,30 +104,30 @@
             app:layout_constraintTop_toBottomOf="@id/asymmetryPercentText" />
 
         <TextView
-            android:id="@+id/asymmetryMsText"
+            android:id="@+id/periodText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:background="@drawable/border_box"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/metric_box"
             android:padding="8dp"
-            android:text="Asymmetry [ms]\n--"
+            android:text="Period [ms]\n--"
             android:textAlignment="center"
             android:textColor="@color/ticktock_blue"
             android:textSize="17sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/periodText" />
+            app:layout_constraintTop_toBottomOf="@id/asymmetryMsText" />
 
         <LinearLayout
             android:id="@+id/beatRow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/asymmetryMsText">
+            app:layout_constraintTop_toBottomOf="@id/periodText">
 
             <View
                 android:id="@+id/beatDot"
@@ -156,7 +150,7 @@
             android:id="@+id/footerText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:layout_marginBottom="4dp"
             android:text="Android app for setting the beat on a pendulum clock"
             android:textAlignment="center"

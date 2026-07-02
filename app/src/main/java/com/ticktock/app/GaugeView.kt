@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
 import kotlin.math.abs
@@ -21,14 +22,14 @@ class GaugeView @JvmOverloads constructor(
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#0A46B3")
-        textSize = 72f
+        textSize = 96f
         textAlign = Paint.Align.CENTER
     }
 
     private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#1E9F45")
-        strokeWidth = 20f
-        style = Paint.Style.FILL_AND_STROKE
+        strokeWidth = 24f
+        style = Paint.Style.STROKE
     }
 
     private var asymmetryPercent: Double = 0.0
@@ -48,26 +49,37 @@ class GaugeView @JvmOverloads constructor(
         super.onDraw(canvas)
         val w = width.toFloat()
         val h = height.toFloat()
+        val indicatorDrop = textPaint.textSize / 3f
 
-        val margin = 28f
-        val baseline = h * 0.62f
+        val margin = w * 0.10f
+        val baseline = h * 0.54f
         val minX = margin
         val maxX = w - margin
         val centerX = w / 2f
+        val labelY = baseline + (h * 0.24f) + indicatorDrop
 
         canvas.drawLine(minX, baseline, maxX, baseline, linePaint)
         canvas.drawLine(centerX, baseline - 24f, centerX, baseline + 24f, linePaint)
 
-        canvas.drawText("-25%", minX + 54f, baseline - 34f, textPaint)
-        canvas.drawText("0%", centerX, baseline - 34f, textPaint)
-        canvas.drawText("+25%", maxX - 54f, baseline - 34f, textPaint)
+        canvas.drawText("-25%", minX + 54f, labelY, textPaint)
+        canvas.drawText("0%", centerX, labelY, textPaint)
+        canvas.drawText("+25%", maxX - 54f, labelY, textPaint)
 
         val normalized = ((asymmetryPercent + 25.0) / 50.0).toFloat()
         val arrowX = minX + (maxX - minX) * normalized
-        val topY = max(18f, baseline - 200f)
+        val tipY = max(16f, baseline - (h * 0.02f))
+        val headHeight = 52f
+        val stemTopY = max(16f, baseline - (h * 0.90f))
 
-        canvas.drawLine(arrowX, topY, arrowX, baseline - 14f, arrowPaint)
-        canvas.drawLine(arrowX, topY, arrowX - 28f, topY + 38f, arrowPaint)
-        canvas.drawLine(arrowX, topY, arrowX + 28f, topY + 38f, arrowPaint)
+        canvas.drawLine(arrowX, stemTopY, arrowX, tipY - headHeight, arrowPaint)
+
+        val arrowHead = Path().apply {
+            moveTo(arrowX - 36f, tipY - headHeight)
+            lineTo(arrowX + 36f, tipY - headHeight)
+            lineTo(arrowX, tipY)
+            close()
+        }
+        canvas.drawPath(arrowHead, arrowPaint.apply { style = Paint.Style.FILL })
+        arrowPaint.style = Paint.Style.STROKE
     }
 }

@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         if (metrics.periodMs <= 0.0) return
 
         binding.gaugeView.setAsymmetryPercent(metrics.asymmetryPercent)
-        binding.periodText.text = "Period\n${format(metrics.periodMs)} ms"
+        binding.periodText.text = "Period [ms]\n${format(metrics.periodMs)}"
         binding.asymmetryMsText.text = "Asymmetry [ms]\n${format(metrics.asymmetryMs)}"
         binding.asymmetryPercentText.text = "Asymmetry [%]\n${format(metrics.asymmetryPercent)}"
     }
@@ -127,26 +127,31 @@ class MainActivity : AppCompatActivity() {
         val rootPadding = (12f * scale).toInt()
         binding.root.setPadding(rootPadding, rootPadding, rootPadding, rootPadding)
 
-        scaleText(binding.titleText, 28f, scale)
-        scaleText(binding.guessLabel, 18f, scale)
-        scaleText(binding.guessInput, 18f, scale)
-        scaleText(binding.guessUnit, 18f, scale)
-        scaleText(binding.startButton, 18f, scale)
-        scaleText(binding.asymmetryPercentText, 17f, scale)
-        scaleText(binding.periodText, 17f, scale)
-        scaleText(binding.asymmetryMsText, 17f, scale)
-        scaleText(binding.statusText, 16f, scale)
-        scaleText(binding.footerText, 13f, scale)
+        scaleText(binding.titleText, 37.5f, scale)
+        scaleText(binding.guessLabel, 25f, scale)
+        scaleText(binding.guessInput, 25f, scale)
+        scaleText(binding.startButton, 25f, scale)
+        scaleText(binding.asymmetryPercentText, 25f, scale)
+        scaleText(binding.asymmetryMsText, 25f, scale)
+        scaleText(binding.periodText, 25f, scale)
+        scaleText(binding.statusText, 25f, scale)
+        scaleText(binding.footerText, 18f, scale)
 
-        updateHeight(binding.gaugeView, (150f * scale).toInt())
+        updateHeight(binding.gaugeView, (300f * scale).toInt())
         updateSize(binding.beatDot, (84f * scale).toInt(), (84f * scale).toInt())
 
+        val horizontalMargin = (resources.displayMetrics.widthPixels * 0.10f).toInt()
+        updateHorizontalMargins(binding.asymmetryPercentText, horizontalMargin)
+        updateHorizontalMargins(binding.asymmetryMsText, horizontalMargin)
+        updateHorizontalMargins(binding.periodText, horizontalMargin)
+
+        updateTopMargin(binding.titleText, (resources.displayMetrics.heightPixels * 0.05f).toInt())
         updateTopMargin(binding.guessLabel, (10f * scale).toInt())
         updateTopMargin(binding.startButton, (10f * scale).toInt())
         updateTopMargin(binding.gaugeView, (10f * scale).toInt())
         updateTopMargin(binding.asymmetryPercentText, (6f * scale).toInt())
-        updateTopMargin(binding.periodText, (6f * scale).toInt())
         updateTopMargin(binding.asymmetryMsText, (6f * scale).toInt())
+        updateTopMargin(binding.periodText, (6f * scale).toInt())
         updateTopMargin(binding.beatRow, (8f * scale).toInt())
         updateTopMargin(binding.footerText, (8f * scale).toInt())
     }
@@ -172,6 +177,15 @@ class MainActivity : AppCompatActivity() {
         val lp = view.layoutParams
         if (lp is ViewGroup.MarginLayoutParams) {
             lp.topMargin = marginPx
+            view.layoutParams = lp
+        }
+    }
+
+    private fun updateHorizontalMargins(view: View, marginPx: Int) {
+        val lp = view.layoutParams
+        if (lp is ViewGroup.MarginLayoutParams) {
+            lp.marginStart = marginPx
+            lp.marginEnd = marginPx
             view.layoutParams = lp
         }
     }

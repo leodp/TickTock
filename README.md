@@ -1,46 +1,32 @@
-# TickTock Android App
+# TickTock
 
-TickTock is an Android 11+ application that analyzes pendulum clock beats in real time and reports beat asymmetry.
+TickTock is an Android app for setting the beat of a pendulum clock. It listens to the clock through the phone microphone, detects the alternating left and right beats, and shows whether the clock is running evenly.
 
-## What The App Does
+## What It Does
 
-- Records live audio from the phone microphone.
-- Detects alternating pendulum beats (L and R).
-- Computes period, asymmetry in milliseconds, and asymmetry percentage.
-- Shows asymmetry on a gauge from -25% to +25%.
-- Uses arrow color coding:
-	- Green for absolute asymmetry below 2.5%
-	- Yellow for absolute asymmetry from 2.5% to 10%
-	- Red for absolute asymmetry above 10%
+- Listens to live audio from the phone microphone.
+- Detects the pendulum beat pattern in real time.
+- Estimates the beat period, asymmetry in milliseconds, and asymmetry percentage.
+- Displays the asymmetry on a gauge from -25% to +25%.
+- Highlights the beat status with color-coded feedback.
 
 ## How To Use
 
 1. Open the app.
-2. Set `Initial guess period` in milliseconds (default `1200`).
-3. Tap `Start` and allow microphone permission.
-4. Wait while the app searches and refines beat parameters.
-5. Read `Period`, `Asymmetry [ms]`, and `Asymmetry [%]`.
-6. Tap `Stop` to end audio acquisition.
+2. Enter an initial guess for the beat period. The default is `1200 ms`.
+3. Tap `Start` and grant microphone permission if the system asks for it.
+4. Wait while the app searches, locks onto the beat, and updates the measurements.
+5. Read the period, asymmetry in `ms`, and asymmetry in `%`.
+6. Tap `Stop` when you want to stop listening.
 
-## Build (Release v1.0)
+## Preview
 
-1. Install Android Studio (or Android SDK + JDK 17).
-2. From project root, generate wrapper if needed:
+The current app image preview is available at [images/TickTock.jpg](images/TickTock.jpg).
 
-```powershell
-gradle wrapper
-```
+## Release
 
-3. Build release APK:
-
-```powershell
-.\gradlew.bat clean assembleRelease
-```
-
-4. Release output:
-
-- `app/build/outputs/apk/release/app-release-unsigned.apk`
+The latest packaged APK is stored at [TickTock.apk](TickTock.apk).
 
 ## License
 
-GNU GPL v3. See COPYING.
+GNU GPL v3. See [COPYING](COPYING).

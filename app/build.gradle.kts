@@ -47,6 +47,22 @@ android {
     }
 }
 
+tasks.register("copyReleaseApkToRoot") {
+    dependsOn("assembleRelease")
+    doNotTrackState("Copies the release APK into the repository root")
+    doLast {
+        val sourceApk = layout.buildDirectory.file("outputs/apk/release/app-release.apk").get().asFile
+        val targetApk = rootProject.layout.projectDirectory.file("TickTock.apk").asFile
+        sourceApk.copyTo(targetApk, overwrite = true)
+    }
+}
+
+tasks.configureEach {
+    if (name == "assembleRelease") {
+        finalizedBy("copyReleaseApkToRoot")
+    }
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
