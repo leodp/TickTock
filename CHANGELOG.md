@@ -2,6 +2,12 @@
 
 All notable changes to TickTock are documented here.
 
+## 1.0.2 - 2026-07-03
+
+### Changed
+
+- Added the official Gradle distribution SHA-256 checksum to the wrapper configuration to satisfy F-Droid's Gradle wrapper integrity check.
+
 ## 1.0.1 - 2026-07-03
 
 ### Changed
