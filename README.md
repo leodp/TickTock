@@ -23,17 +23,14 @@ TickTock is an Android app for setting the beat of a pendulum clock. It listens 
 
 The current app image preview is available at [images/TickTock.jpg](images/TickTock.jpg).
 
-## Release
-
-The latest packaged APK is stored at [TickTock.apk](TickTock.apk).
-
 ## Distribution
 
 - Primary source and releases are on GitHub.
-- Latest release package is published in this repository.
+- Release artifacts should be attached to GitHub releases, not committed into the source tree.
 - F-Droid listing text metadata is available in [fastlane/metadata/android/en-US](fastlane/metadata/android/en-US).
 - F-Droid submission package is available in [fdroid](fdroid).
 - First F-Droid inclusion is manual, then updates can be tracked from GitHub tags.
+- The Android app has no internet permission, no network code path, and no analytics or tracking SDKs.
 
 ## License
 

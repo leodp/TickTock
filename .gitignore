@@ -13,5 +13,5 @@ local.properties
 Thumbs.db
 .DS_Store
 
-# Keep distributable artifact
-!TickTock.apk
+# Packaged artifacts
+/TickTock.apk
