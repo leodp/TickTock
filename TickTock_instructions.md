@@ -65,6 +65,8 @@ After finding the beat, the values may show a drift for about 10 beats. This may
 
 There is a blue button for starting the audio recording. Add a text inside this button: "Start" for beginning the recording. Once the audio recording has started, change the text to "Stop". Pressing this button stops the audio acquisition, and changes the button text back to "Start"
 
+When **Start** is pressed, log every detected beat time with millisecond precision. Use the first detected beat as the zero offset and write one timestamp per line in seconds. When **Stop** is pressed, save the log without prompting the user to the Documents folder as `ticktockBeats_[date-hour].txt`, where the timestamp identifies the date and hour of the recording. Show a confirmation popup for three seconds after a successful save.
+
 Below the GUI add a text reading "Android app for setting the beat on a pendulum clock"
 
 Make a better icon for the app, with a more clear image of a pendulum clock. The icon of the installed apk should be visualized in both square or circular shape (background color in both images consistent, without square cutout)
@@ -75,6 +77,8 @@ Remove the debug apk and assemble a release app
 Upload everything, including the built apk to github
 
 ## Update2
+
+The running mean period is updated after each detected beat. The UI displays the mean period and observed standard deviation with one decimal place. The live calculation removes the initial 10% of beat intervals and rejects values outside the median +/- five standard deviations; the final stopped calculation also removes the last 10%.
 
 The fit stops after the required number of beats, but the tracking too: tracking and calculation of beats asymmetry and all UI indications should continue
 

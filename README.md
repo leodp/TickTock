@@ -9,6 +9,9 @@ TickTock is an Android app for setting the beat of a pendulum clock. It listens 
 - Estimates the beat period, asymmetry in milliseconds, and asymmetry percentage.
 - Displays the asymmetry on a gauge from -25% to +25%.
 - Highlights the beat status with color-coded feedback.
+- Logs every detected beat with millisecond precision relative to the first beat.
+- Shows the filtered mean period and observed standard deviation while tracking and after stopping, calculated as twice the average beat interval.
+- Saves the beat log automatically in the user's `Documents` folder when stopped.
 
 ## How To Use
 
@@ -17,7 +20,13 @@ TickTock is an Android app for setting the beat of a pendulum clock. It listens 
 3. Tap `Start` and grant microphone permission if the system asks for it.
 4. Wait while the app searches, locks onto the beat, and updates the measurements.
 5. Read the period, asymmetry in `ms`, and asymmetry in `%`.
-6. Tap `Stop` when you want to stop listening.
+6. While tracking, read the live `Mean period [ms]` value and its observed standard deviation after each detected beat.
+7. Tap `Stop` when you want to stop listening and save the beat log.
+8. Read the final filtered mean period and observed standard deviation in the `Mean period [ms]` box.
+9. Find the log in `Documents` with a name such as `ticktockBeats_2026-09-14_15-42-07.txt`.
+
+Each line in the text file contains one beat time in seconds, formatted to three decimal places. The first detected beat is always `0.000`.
+During tracking, the displayed mean period is twice the average of adjacent beat intervals after removing the first 10% and filtering values outside the median +/- five standard deviations. At stop, the last 10% is removed as well. The value after `+/-` is the observed standard deviation of the retained period intervals.
 
 ## Preview
 

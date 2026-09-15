@@ -147,6 +147,21 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/tickText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/metric_box"
+            android:padding="8dp"
+            android:text="Mean period [ms]\n--"
+            android:textAlignment="center"
+            android:textColor="@color/ticktock_blue"
+            android:textSize="17sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/beatRow" />
+
+        <TextView
             android:id="@+id/footerText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -159,5 +174,5 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/beatRow" />
+            app:layout_constraintTop_toBottomOf="@id/tickText" />
 </androidx.constraintlayout.widget.ConstraintLayout>

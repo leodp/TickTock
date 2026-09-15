@@ -14,8 +14,55 @@ data class BeatMetrics(
     val asymmetryMs: Double,
     val asymmetryPercent: Double,
     val beatLabel: Char,
-    val acquiring: Boolean
+    val acquiring: Boolean,
+    val beatTimeSeconds: Double = 0.0,
+    val meanPeriodMs: Double = 0.0,
+    val meanPeriodStdDevMs: Double = 0.0
 )
+
+data class MeanPeriodStats(
+    val meanPeriodMs: Double,
+    val standardDeviationMs: Double
+)
+
+fun calculateMeanPeriodStats(deltas: List<Double>, trimEnd: Boolean): MeanPeriodStats? {
+    if (deltas.isEmpty()) return null
+
+    val trimCount = (deltas.size * 0.10).toInt()
+    val trimmed = deltas.drop(trimCount).let { values ->
+        if (trimEnd) values.dropLast(trimCount) else values
+    }
+    if (trimmed.isEmpty()) return null
+
+    val sorted = trimmed.sorted()
+    val middle = sorted.size / 2
+    val median = if (sorted.size % 2 == 0) {
+        (sorted[middle - 1] + sorted[middle]) / 2.0
+    } else {
+        sorted[middle]
+    }
+    val initialMean = trimmed.average()
+    val initialStandardDeviation = kotlin.math.sqrt(
+        trimmed.map { delta -> (delta - initialMean) * (delta - initialMean) }.average()
+    )
+    val filtered = if (initialStandardDeviation == 0.0) {
+        trimmed
+    } else {
+        trimmed.filter {
+            it in median - 5.0 * initialStandardDeviation..median + 5.0 * initialStandardDeviation
+        }
+    }
+    if (filtered.isEmpty()) return null
+
+    val meanBeatMs = filtered.average()
+    val standardDeviationBeatMs = kotlin.math.sqrt(
+        filtered.map { delta -> (delta - meanBeatMs) * (delta - meanBeatMs) }.average()
+    )
+    return MeanPeriodStats(
+        meanPeriodMs = meanBeatMs * 2.0,
+        standardDeviationMs = standardDeviationBeatMs * 2.0
+    )
+}
 
 class AudioBeatAnalyzer(
     private val initialGuessPeriodMs: Long,
@@ -37,11 +84,13 @@ class AudioBeatAnalyzer(
 
     private var beatCount = 0
     private var lastBeatTimeNs = 0L
+    private var firstBeatTimeNs = 0L
     private var lastBeatLabel = 'R'
     private val maxRefinementBeats = 40
 
     private val lDurations = ArrayDeque<Double>()
     private val rDurations = ArrayDeque<Double>()
+    private val beatIntervals = mutableListOf<Double>()
 
     fun start() {
         if (running) return
@@ -133,9 +182,12 @@ class AudioBeatAnalyzer(
 
             beatCount += 1
             val beatLabel = if (beatCount % 2 == 1) 'L' else 'R'
+            if (firstBeatTimeNs == 0L) firstBeatTimeNs = beatTimeNs
+            val beatTimeSeconds = (beatTimeNs - firstBeatTimeNs) / 1_000_000_000.0
 
             if (lastBeatTimeNs != 0L) {
                 val deltaMs = (beatTimeNs - lastBeatTimeNs) / 1_000_000.0
+                if (deltaMs in 120.0..4_000.0) beatIntervals += deltaMs
                 // Tracking and asymmetry computation continue after fit refinement ends.
                 if (lastBeatLabel == 'L' && beatLabel == 'R') {
                     addDuration(lDurations, deltaMs)
@@ -146,7 +198,7 @@ class AudioBeatAnalyzer(
 
             lastBeatTimeNs = beatTimeNs
             lastBeatLabel = beatLabel
-            emitMetrics(beatLabel)
+            emitMetrics(beatLabel, beatTimeSeconds)
         }
     }
 
@@ -156,7 +208,7 @@ class AudioBeatAnalyzer(
         while (queue.size > 14) queue.removeFirst()
     }
 
-    private fun emitMetrics(label: Char) {
+    private fun emitMetrics(label: Char, beatTimeSeconds: Double) {
         val l = if (lDurations.isNotEmpty()) lDurations.average() else 0.0
         val r = if (rDurations.isNotEmpty()) rDurations.average() else 0.0
         val acquiring = lDurations.size < 3 || rDurations.size < 3 || beatCount < 10
@@ -165,9 +217,21 @@ class AudioBeatAnalyzer(
             val period = l + r
             val asymMs = l - r
             val asymPct = 100.0 * asymMs / period
-            onMetrics(BeatMetrics(period, asymMs, asymPct, label, acquiring))
+            val meanPeriodStats = calculateMeanPeriodStats(beatIntervals, trimEnd = false)
+            onMetrics(
+                BeatMetrics(
+                    period,
+                    asymMs,
+                    asymPct,
+                    label,
+                    acquiring,
+                    beatTimeSeconds,
+                    meanPeriodStats?.meanPeriodMs ?: 0.0,
+                    meanPeriodStats?.standardDeviationMs ?: 0.0
+                )
+            )
         } else {
-            onMetrics(BeatMetrics(0.0, 0.0, 0.0, label, true))
+            onMetrics(BeatMetrics(0.0, 0.0, 0.0, label, true, beatTimeSeconds))
         }
     }
 

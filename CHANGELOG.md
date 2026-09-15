@@ -2,6 +2,27 @@
 
 All notable changes to TickTock are documented here.
 
+## 1.0.4 - 2026-09-15
+
+### Added
+
+- Added live mean-period updates after each detected beat while tracking.
+- Added the observed standard deviation alongside the mean period, with one decimal place, during tracking and after stopping.
+- Added live filtering that removes the initial 10% of beat intervals and rejects values outside the median +/- five standard deviations. The final stopped calculation also removes the last 10%.
+
+## 1.0.3 - 2026-09-14
+
+### Added
+
+- Added automatic beat logging with millisecond precision and first-beat zero offset.
+- Added a stop-time filtered average tick duration to the tracking screen.
+- Added automatic saving of beat logs to the user's Documents folder on Stop.
+- Added a three-second save confirmation popup.
+
+### Changed
+
+- Beat log filenames now include minutes and seconds to distinguish recordings made within the same hour.
+
 ## 1.0.2 - 2026-07-03
 
 ### Changed
