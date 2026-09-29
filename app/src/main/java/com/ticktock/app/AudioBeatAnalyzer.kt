@@ -86,7 +86,9 @@ class AudioBeatAnalyzer(
     private var lastBeatTimeNs = 0L
     private var firstBeatTimeNs = 0L
     private var lastBeatLabel = 'R'
+    private val minRefinementBeats = 10
     private val maxRefinementBeats = 40
+    private var lockedRefractoryMs: Long? = null
 
     private val lDurations = ArrayDeque<Double>()
     private val rDurations = ArrayDeque<Double>()
@@ -135,14 +137,14 @@ class AudioBeatAnalyzer(
 
         val buffer = ShortArray(1024)
         val halfBeatGuessMs = initialGuessPeriodMs / 2.0
-        val refractoryMs = (halfBeatGuessMs * 0.4).coerceIn(60.0, 1_600.0).toLong()
+        var refractoryMs = (halfBeatGuessMs * 0.4).coerceIn(60.0, 1_600.0).toLong()
 
         record.startRecording()
         try {
             while (running) {
                 val read = record.read(buffer, 0, buffer.size)
                 if (read <= 0) continue
-                processAudioBlock(buffer, read, refractoryMs)
+                refractoryMs = processAudioBlock(buffer, read, refractoryMs)
             }
         } finally {
             if (record.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
@@ -152,7 +154,8 @@ class AudioBeatAnalyzer(
         }
     }
 
-    private fun processAudioBlock(data: ShortArray, count: Int, refractoryMs: Long) {
+    private fun processAudioBlock(data: ShortArray, count: Int, refractoryMs: Long): Long {
+        var currentRefractoryMs = lockedRefractoryMs ?: refractoryMs
         val nowNs = System.nanoTime()
         for (i in 0 until count) {
             val sample = data[i] / 32768.0
@@ -176,7 +179,7 @@ class AudioBeatAnalyzer(
             if (!risingCross) continue
 
             val beatTimeNs = nowNs + (i * 1_000_000_000L / sampleRate)
-            if (lastBeatTimeNs != 0L && (beatTimeNs - lastBeatTimeNs) / 1_000_000 < refractoryMs) {
+            if (lastBeatTimeNs != 0L && (beatTimeNs - lastBeatTimeNs) / 1_000_000 < currentRefractoryMs) {
                 continue
             }
 
@@ -188,7 +191,9 @@ class AudioBeatAnalyzer(
             if (lastBeatTimeNs != 0L) {
                 val deltaMs = (beatTimeNs - lastBeatTimeNs) / 1_000_000.0
                 if (deltaMs in 120.0..4_000.0) beatIntervals += deltaMs
-                // Tracking and asymmetry computation continue after fit refinement ends.
+                if (lockedRefractoryMs == null && deltaMs in 120.0..4_000.0) {
+                    currentRefractoryMs = fitRefractoryMs()
+                }
                 if (lastBeatLabel == 'L' && beatLabel == 'R') {
                     addDuration(lDurations, deltaMs)
                 } else if (lastBeatLabel == 'R' && beatLabel == 'L') {
@@ -198,8 +203,38 @@ class AudioBeatAnalyzer(
 
             lastBeatTimeNs = beatTimeNs
             lastBeatLabel = beatLabel
+            if (
+                lockedRefractoryMs == null &&
+                (beatCount >= maxRefinementBeats ||
+                    (beatCount >= minRefinementBeats && isFitStable()))
+            ) {
+                lockedRefractoryMs = currentRefractoryMs
+            }
             emitMetrics(beatLabel, beatTimeSeconds)
         }
+        return lockedRefractoryMs ?: currentRefractoryMs
+    }
+
+    private fun fitRefractoryMs(): Long {
+        val recentIntervals = beatIntervals.takeLast(12).sorted()
+        if (recentIntervals.isEmpty()) return 60L
+        val middle = recentIntervals.size / 2
+        val median = if (recentIntervals.size % 2 == 0) {
+            (recentIntervals[middle - 1] + recentIntervals[middle]) / 2.0
+        } else {
+            recentIntervals[middle]
+        }
+        return (median * 0.4).coerceIn(60.0, 1_600.0).toLong()
+    }
+
+    private fun isFitStable(): Boolean {
+        if (beatIntervals.size < 8) return false
+        val recentIntervals = beatIntervals.takeLast(8)
+        val firstHalf = recentIntervals.take(4).sorted()
+        val secondHalf = recentIntervals.takeLast(4).sorted()
+        val firstMedian = (firstHalf[1] + firstHalf[2]) / 2.0
+        val secondMedian = (secondHalf[1] + secondHalf[2]) / 2.0
+        return abs(firstMedian - secondMedian) / maxOf(firstMedian, secondMedian) <= 0.02
     }
 
     private fun addDuration(queue: ArrayDeque<Double>, value: Double) {
@@ -211,7 +246,7 @@ class AudioBeatAnalyzer(
     private fun emitMetrics(label: Char, beatTimeSeconds: Double) {
         val l = if (lDurations.isNotEmpty()) lDurations.average() else 0.0
         val r = if (rDurations.isNotEmpty()) rDurations.average() else 0.0
-        val acquiring = lDurations.size < 3 || rDurations.size < 3 || beatCount < 10
+        val acquiring = lDurations.size < 3 || rDurations.size < 3 || lockedRefractoryMs == null
 
         if (l > 0.0 && r > 0.0) {
             val period = l + r

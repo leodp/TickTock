@@ -1,5 +1,3 @@
-import com.android.build.gradle.internal.api.BaseVariantOutputImpl
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,8 +11,8 @@ android {
         applicationId = "com.ticktock.app"
         minSdk = 30
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.0.4"
+        versionCode = 6
+        versionName = "1.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -46,32 +44,6 @@ android {
     lint {
         checkReleaseBuilds = false
         abortOnError = false
-    }
-}
-
-android.applicationVariants.all {
-    outputs.all {
-        (this as BaseVariantOutputImpl).outputFileName = "TickTock.apk"
-    }
-}
-
-tasks.register("copyReleaseApkToRoot") {
-    dependsOn("assembleRelease")
-    doNotTrackState("Copies the release APK into the repository root")
-    doLast {
-        val releaseDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
-        val sourceApk = releaseDir
-            .listFiles { file -> file.isFile && file.extension.equals("apk", ignoreCase = true) }
-            ?.singleOrNull()
-            ?: error("Expected exactly one release APK in ${releaseDir.absolutePath}")
-        val targetApk = rootProject.layout.projectDirectory.file("TickTock.apk").asFile
-        sourceApk.copyTo(targetApk, overwrite = true)
-    }
-}
-
-tasks.configureEach {
-    if (name == "assembleRelease") {
-        finalizedBy("copyReleaseApkToRoot")
     }
 }
 

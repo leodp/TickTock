@@ -13,5 +13,6 @@ local.properties
 Thumbs.db
 .DS_Store
 
-# Packaged artifacts
+# Legacy local artifact from older release workflow
 /TickTock.apk
+

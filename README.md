@@ -35,10 +35,11 @@ The current app image preview is available at [images/TickTock.jpg](images/TickT
 ## Distribution
 
 - Primary source and releases are on GitHub.
+- The standard release APK is created at `app/build/outputs/apk/release/app-release.apk`.
 - Release artifacts should be attached to GitHub releases, not committed into the source tree.
 - F-Droid listing text metadata is available in [fastlane/metadata/android/en-US](fastlane/metadata/android/en-US).
 - F-Droid submission package is available in [fdroid](fdroid).
-- First F-Droid inclusion is manual, then updates can be tracked from GitHub tags.
+- F-Droid builds use the standard Gradle release output and can track updates from GitHub tags.
 - The Android app has no internet permission, no network code path, and no analytics or tracking SDKs.
 
 ## License

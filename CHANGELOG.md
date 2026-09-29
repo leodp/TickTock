@@ -2,6 +2,14 @@
 
 All notable changes to TickTock are documented here.
 
+## 1.0.5 - 2026-09-29
+
+### Changed
+
+- Stabilized beat detection after the measured rhythm becomes consistent, while continuing to track and calculate asymmetry.
+- Restored the standard Android Gradle release output at `app/build/outputs/apk/release/app-release.apk`.
+- Updated the F-Droid metadata for version code 6 and tag `v1.0.5`.
+
 ## 1.0.4 - 2026-09-15
 
 ### Added
