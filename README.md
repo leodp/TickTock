@@ -24,6 +24,7 @@ TickTock is an Android app for setting the beat of a pendulum clock. It listens 
 7. Tap `Stop` when you want to stop listening and save the beat log.
 8. Read the final filtered mean period and observed standard deviation in the `Mean period [ms]` box.
 9. Find the log in `Documents` with a name such as `ticktockBeats_2026-09-14_15-42-07.txt`.
+10. Rotate the device to upside-down portrait when that places the microphone closer to the clock; the app follows the rotation.
 
 Each line in the text file contains one beat time in seconds, formatted to three decimal places. The first detected beat is always `0.000`.
 During tracking, the displayed mean period is twice the average of adjacent beat intervals after removing the first 10% and filtering values outside the median +/- five standard deviations. At stop, the last 10% is removed as well. The value after `+/-` is the observed standard deviation of the retained period intervals.

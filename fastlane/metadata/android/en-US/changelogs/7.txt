@@ -1,0 +1,1 @@
+The app now supports upside-down portrait orientation, allowing the screen to remain correctly oriented when positioning the microphone. The launcher icon now uses the supplied clock image.

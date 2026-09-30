@@ -2,6 +2,13 @@
 
 All notable changes to TickTock are documented here.
 
+## 1.0.6 - 2026-09-30
+
+### Changed
+
+- Enabled upside-down portrait orientation so the app rendering can rotate with the device while positioning the microphone.
+- Replaced the generated launcher icon with the supplied `Orologio.jpg` image and a white adaptive-icon background.
+
 ## 1.0.5 - 2026-09-29
 
 ### Changed

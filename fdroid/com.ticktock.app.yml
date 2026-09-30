@@ -24,13 +24,13 @@ RepoType: git
 Repo: https://github.com/leodp/TickTock.git
 
 Builds:
-  - versionName: "1.0.5"
-    versionCode: 6
-    commit: v1.0.5
+  - versionName: "1.0.6"
+    versionCode: 7
+    commit: v1.0.6
     gradle:
       - yes
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: "1.0.5"
-CurrentVersionCode: 6
+CurrentVersion: "1.0.6"
+CurrentVersionCode: 7
