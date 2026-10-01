@@ -8,17 +8,6 @@ IssueTracker: https://github.com/leodp/TickTock/issues
 Changelog: https://github.com/leodp/TickTock/blob/main/CHANGELOG.md
 
 AutoName: TickTock
-Summary: Pendulum clock beat asymmetry analyzer
-Description: |-
-  TickTock helps set the beat of a pendulum clock.
-
-  The app listens through the device microphone, detects alternating left/right
-  beats, and estimates:
-  . Period [ms]
-  . Asymmetry [ms]
-  . Asymmetry [%]
-
-  A gauge displays asymmetry from -25% to +25% with color-coded guidance.
 
 RepoType: git
 Repo: https://github.com/leodp/TickTock.git
@@ -29,7 +18,7 @@ Builds:
     commit: d19d99b72f1dcd03004ef51db638ef7d654dfdb2
     gradle:
       - yes
-    output: app/build/outputs/apk/release/app-release.apk
+    output: app/build/outputs/apk/release/app-release-unsigned.apk
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
