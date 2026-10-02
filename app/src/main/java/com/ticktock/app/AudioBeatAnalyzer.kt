@@ -68,11 +68,11 @@ class AudioBeatAnalyzer(
     private val initialGuessPeriodMs: Long,
     private val onMetrics: (BeatMetrics) -> Unit
 ) {
-    private val sampleRate = 44_100
-    private val highPass1 = Biquad.highPass(sampleRate.toDouble(), 600.0, 0.707)
-    private val highPass2 = Biquad.highPass(sampleRate.toDouble(), 600.0, 0.707)
-    private val lowPass1 = Biquad.lowPass(sampleRate.toDouble(), 5000.0, 0.707)
-    private val lowPass2 = Biquad.lowPass(sampleRate.toDouble(), 5000.0, 0.707)
+    private var sampleRate = 192_000
+    private lateinit var highPass1: Biquad
+    private lateinit var highPass2: Biquad
+    private lateinit var lowPass1: Biquad
+    private lateinit var lowPass2: Biquad
 
     @Volatile
     private var running = false
@@ -80,12 +80,18 @@ class AudioBeatAnalyzer(
     private var worker: Thread? = null
     private var prevEnvelope = 0.0
     private var envelope = 0.0
+    private var rawEnvelope = 0.0
     private var noiseFloor = 0.0
+    private var inputGain = 1.0
 
     private var beatCount = 0
     private var lastBeatTimeNs = 0L
     private var firstBeatTimeNs = 0L
     private var lastBeatLabel = 'R'
+    private var peakActive = false
+    private var peakEnvelope = 0.0
+    private var peakTimeNs = 0L
+    private var startupPeakDiscarded = false
     private val minRefinementBeats = 10
     private val maxRefinementBeats = 40
     private var lockedRefractoryMs: Long? = null
@@ -109,12 +115,8 @@ class AudioBeatAnalyzer(
     }
 
     private fun runLoop() {
-        val minBuffer = AudioRecord.getMinBufferSize(
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
-        )
-        if (minBuffer <= 0) {
+        val recordAndBuffer = createAudioRecord()
+        if (recordAndBuffer == null) {
             onMetrics(
                 BeatMetrics(
                     periodMs = 0.0,
@@ -127,15 +129,13 @@ class AudioBeatAnalyzer(
             return
         }
 
-        val record = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            maxOf(minBuffer * 2, 4096)
-        )
+        val (record, bufferSize) = recordAndBuffer
+        highPass1 = Biquad.highPass(sampleRate.toDouble(), 600.0, 0.707)
+        highPass2 = Biquad.highPass(sampleRate.toDouble(), 600.0, 0.707)
+        lowPass1 = Biquad.lowPass(sampleRate.toDouble(), 5000.0, 0.707)
+        lowPass2 = Biquad.lowPass(sampleRate.toDouble(), 5000.0, 0.707)
 
-        val buffer = ShortArray(1024)
+        val buffer = ShortArray(maxOf(1024, bufferSize / 4))
         val halfBeatGuessMs = initialGuessPeriodMs / 2.0
         var refractoryMs = (halfBeatGuessMs * 0.4).coerceIn(60.0, 1_600.0).toLong()
 
@@ -154,6 +154,34 @@ class AudioBeatAnalyzer(
         }
     }
 
+    private fun createAudioRecord(): Pair<AudioRecord, Int>? {
+        for (candidateRate in listOf(192_000, 96_000, 48_000, 44_100)) {
+            val minBuffer = AudioRecord.getMinBufferSize(
+                candidateRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
+            )
+            if (minBuffer <= 0) continue
+
+            try {
+                val record = AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    candidateRate,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    maxOf(minBuffer * 2, 4096)
+                )
+                if (record.state == AudioRecord.STATE_INITIALIZED) {
+                    sampleRate = candidateRate
+                    return record to maxOf(minBuffer * 2, 4096)
+                }
+                record.release()
+            } catch (_: IllegalArgumentException) {
+            }
+        }
+        return null
+    }
+
     private fun processAudioBlock(data: ShortArray, count: Int, refractoryMs: Long): Long {
         var currentRefractoryMs = lockedRefractoryMs ?: refractoryMs
         val nowNs = System.nanoTime()
@@ -162,13 +190,33 @@ class AudioBeatAnalyzer(
             val bp = lowPass2.process(lowPass1.process(highPass2.process(highPass1.process(sample))))
             val rectified = abs(bp)
 
+            val rawAttack = 0.45
+            val rawDecay = 0.015
+            rawEnvelope = if (rectified > rawEnvelope) {
+                rawAttack * rectified + (1.0 - rawAttack) * rawEnvelope
+            } else {
+                rawDecay * rectified + (1.0 - rawDecay) * rawEnvelope
+            }
+
+            if (lockedRefractoryMs != null) {
+                val targetGain = when {
+                    rawEnvelope <= 0.005 -> 8.0
+                    rawEnvelope >= 0.040 -> 1.0
+                    else -> 8.0 - (rawEnvelope - 0.005) * 7.0 / 0.035
+                }
+                inputGain += (targetGain - inputGain) * 0.00001
+            } else {
+                inputGain = 1.0
+            }
+
             // Fast attack, slower decay envelope.
             val attack = 0.45
             val decay = 0.015
-            envelope = if (rectified > envelope) {
-                attack * rectified + (1.0 - attack) * envelope
+            val amplifiedRectified = rectified * inputGain
+            envelope = if (amplifiedRectified > envelope) {
+                attack * amplifiedRectified + (1.0 - attack) * envelope
             } else {
-                decay * rectified + (1.0 - decay) * envelope
+                decay * amplifiedRectified + (1.0 - decay) * envelope
             }
 
             noiseFloor = 0.001 * envelope + 0.999 * noiseFloor
@@ -176,41 +224,59 @@ class AudioBeatAnalyzer(
             val risingCross = prevEnvelope < threshold && envelope >= threshold
             prevEnvelope = envelope
 
-            if (!risingCross) continue
-
-            val beatTimeNs = nowNs + (i * 1_000_000_000L / sampleRate)
-            if (lastBeatTimeNs != 0L && (beatTimeNs - lastBeatTimeNs) / 1_000_000 < currentRefractoryMs) {
-                continue
-            }
-
-            beatCount += 1
-            val beatLabel = if (beatCount % 2 == 1) 'L' else 'R'
-            if (firstBeatTimeNs == 0L) firstBeatTimeNs = beatTimeNs
-            val beatTimeSeconds = (beatTimeNs - firstBeatTimeNs) / 1_000_000_000.0
-
-            if (lastBeatTimeNs != 0L) {
-                val deltaMs = (beatTimeNs - lastBeatTimeNs) / 1_000_000.0
-                if (deltaMs in 120.0..4_000.0) beatIntervals += deltaMs
-                if (lockedRefractoryMs == null && deltaMs in 120.0..4_000.0) {
-                    currentRefractoryMs = fitRefractoryMs()
+            val sampleTimeNs = nowNs + (i * 1_000_000_000L / sampleRate)
+            if (risingCross && !peakActive) {
+                peakActive = true
+                peakEnvelope = envelope
+                peakTimeNs = sampleTimeNs
+            } else if (peakActive) {
+                if (envelope > peakEnvelope) {
+                    peakEnvelope = envelope
+                    peakTimeNs = sampleTimeNs
                 }
-                if (lastBeatLabel == 'L' && beatLabel == 'R') {
-                    addDuration(lDurations, deltaMs)
-                } else if (lastBeatLabel == 'R' && beatLabel == 'L') {
-                    addDuration(rDurations, deltaMs)
+                if (envelope <= peakEnvelope * 0.80) {
+                    peakActive = false
+                    val beatTimeNs = peakTimeNs
+                    if (!startupPeakDiscarded) {
+                        startupPeakDiscarded = true
+                        continue
+                    }
+                    if (lastBeatTimeNs != 0L &&
+                        (beatTimeNs - lastBeatTimeNs) / 1_000_000 < currentRefractoryMs
+                    ) {
+                        continue
+                    }
+
+                    beatCount += 1
+                    val beatLabel = if (beatCount % 2 == 1) 'L' else 'R'
+                    if (firstBeatTimeNs == 0L) firstBeatTimeNs = beatTimeNs
+                    val beatTimeSeconds = (beatTimeNs - firstBeatTimeNs) / 1_000_000_000.0
+
+                    if (lastBeatTimeNs != 0L) {
+                        val deltaMs = (beatTimeNs - lastBeatTimeNs) / 1_000_000.0
+                        if (deltaMs in 120.0..4_000.0) beatIntervals += deltaMs
+                        if (lockedRefractoryMs == null && deltaMs in 120.0..4_000.0) {
+                            currentRefractoryMs = fitRefractoryMs()
+                        }
+                        if (lastBeatLabel == 'L' && beatLabel == 'R') {
+                            addDuration(lDurations, deltaMs)
+                        } else if (lastBeatLabel == 'R' && beatLabel == 'L') {
+                            addDuration(rDurations, deltaMs)
+                        }
+                    }
+
+                    lastBeatTimeNs = beatTimeNs
+                    lastBeatLabel = beatLabel
+                    if (
+                        lockedRefractoryMs == null &&
+                        (beatCount >= maxRefinementBeats ||
+                            (beatCount >= minRefinementBeats && isFitStable()))
+                    ) {
+                        lockedRefractoryMs = currentRefractoryMs
+                    }
+                    emitMetrics(beatLabel, beatTimeSeconds)
                 }
             }
-
-            lastBeatTimeNs = beatTimeNs
-            lastBeatLabel = beatLabel
-            if (
-                lockedRefractoryMs == null &&
-                (beatCount >= maxRefinementBeats ||
-                    (beatCount >= minRefinementBeats && isFitStable()))
-            ) {
-                lockedRefractoryMs = currentRefractoryMs
-            }
-            emitMetrics(beatLabel, beatTimeSeconds)
         }
         return lockedRefractoryMs ?: currentRefractoryMs
     }

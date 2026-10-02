@@ -2,6 +2,14 @@
 
 All notable changes to TickTock are documented here.
 
+## 1.0.7 - 2026-10-02
+
+### Changed
+
+- Increased audio capture precision by preferring 192 kHz mono input, with runtime fallbacks for lower supported rates.
+- Improved beat timing by confirming envelope peaks and ignoring the initial transient peak.
+- Added gradual post-lock gain for quiet signals.
+
 ## 1.0.6 - 2026-09-30
 
 ### Changed
