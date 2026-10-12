@@ -81,14 +81,14 @@ class MainActivity : AppCompatActivity() {
             acceptingBeatLog = true
         }
         binding.startButton.text = "Stop"
-        binding.statusText.text = "Searching beat..."
+        binding.statusText.text = "Search"
         binding.tickText.text = "Mean period [ms]\n--"
         running = true
 
         analyzer = AudioBeatAnalyzer(initialGuessPeriodMs = guessPeriodMs) { metrics ->
             synchronized(beatLogLock) {
                 if (acceptingBeatLog) {
-                    loggedBeats += String.format(Locale.US, "%.3f", metrics.beatTimeSeconds)
+                    loggedBeats += String.format(Locale.US, "%.4f", metrics.beatTimeSeconds)
                 }
             }
             runOnUiThread { renderMetrics(metrics) }
@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         running = false
         binding.startButton.text = "Start"
         binding.beatDot.backgroundTintList = ContextCompat.getColorStateList(this, R.color.ticktock_red)
-        binding.statusText.text = "Searching beat..."
+        binding.statusText.text = "Search"
         val meanPeriodStats = calculateMeanPeriodStats(
             beatDeltas(beats),
             trimEnd = true
@@ -159,9 +159,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderMetrics(metrics: BeatMetrics) {
         if (metrics.acquiring) {
-            binding.statusText.text = "Searching beat..."
+            binding.statusText.text = "Search"
         } else {
-            binding.statusText.text = "Tracking beat"
+            binding.statusText.text = "Track"
         }
 
         val dotColor = when (metrics.beatLabel) {
@@ -171,6 +171,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.beatDot.backgroundTintList = ContextCompat.getColorStateList(this, dotColor)
+        binding.gainText.text = "G: ${format(metrics.agcGain)}"
+        binding.gainText.setTextColor(ContextCompat.getColor(this, dotColor))
         binding.beatDot.animate()
             .scaleX(1.2f)
             .scaleY(1.2f)
@@ -214,6 +216,7 @@ class MainActivity : AppCompatActivity() {
         scaleText(binding.periodText, 25f, scale)
         scaleText(binding.tickText, 25f, scale)
         scaleText(binding.statusText, 25f, scale)
+        scaleText(binding.gainText, 25f, scale)
         scaleText(binding.footerText, 18f, scale)
 
         updateHeight(binding.gaugeView, (300f * scale).toInt())

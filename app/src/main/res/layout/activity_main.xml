@@ -120,11 +120,12 @@
 
         <LinearLayout
             android:id="@+id/beatRow"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:gravity="center_vertical"
+            android:gravity="center_vertical|start"
             android:orientation="horizontal"
+            android:paddingStart="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/periodText">
@@ -141,8 +142,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:text="Searching beat..."
+                android:text="Search"
                 android:textColor="@color/ticktock_blue"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/gainText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text="G: 1.0"
+                android:textColor="@color/ticktock_red"
                 android:textSize="16sp" />
         </LinearLayout>
 

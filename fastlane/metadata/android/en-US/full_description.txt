@@ -8,6 +8,8 @@ KEY FEATURES:
 - Gauge visualization from -25% to +25%
 - Color-coded asymmetry indicator for quick feedback
 - Start/Stop acquisition with live status text
+- Live `G:` indication of the automatic gain-control multiplier; the value freezes after fit lock
+- Beat-log export with 0.1 ms precision
 
 USAGE:
 
@@ -18,5 +20,5 @@ USAGE:
 
 OPEN SOURCE:
 
-Licensed under GNU GPL v3.
+Licensed under GNU GPL v3.0 or later.
 Source code: https://github.com/leodp/TickTock

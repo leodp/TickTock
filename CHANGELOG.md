@@ -2,6 +2,18 @@
 
 All notable changes to TickTock are documented here.
 
+## 1.08 - 2026-10-12
+
+### Changed
+
+- Improved the fit routine by skipping initial audio transients before accepting beat measurements.
+- Corrected tracking timestamps using the continuous audio sample clock.
+- Raised audio acquisition priority as far as Android permits for real-time processing.
+- Reintroduced acquisition AGC with RMS and peak clipping control, a 30% headroom limit, no overshoot, and a maximum gain of 20.
+- Extended the tracking phase when AGC gain is still stabilizing before freezing the gain at lock.
+- Added the live `G:` gain indication; it shows the AGC multiplier and freezes after fit lock.
+- Exported beat timestamps with 0.1 ms precision.
+
 ## 1.0.7 - 2026-10-02
 
 ### Changed
@@ -79,4 +91,4 @@ All notable changes to TickTock are documented here.
 
 ### Notes
 
-- The project is released under the GNU GPL v3.
+- The project is released under the GNU GPL v3.0 or later.

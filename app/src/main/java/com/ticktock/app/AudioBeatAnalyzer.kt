@@ -3,6 +3,7 @@ package com.ticktock.app
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.Process
 import kotlin.concurrent.thread
 import kotlin.math.PI
 import kotlin.math.abs
@@ -17,7 +18,8 @@ data class BeatMetrics(
     val acquiring: Boolean,
     val beatTimeSeconds: Double = 0.0,
     val meanPeriodMs: Double = 0.0,
-    val meanPeriodStdDevMs: Double = 0.0
+    val meanPeriodStdDevMs: Double = 0.0,
+    val agcGain: Double = 1.0
 )
 
 data class MeanPeriodStats(
@@ -80,9 +82,11 @@ class AudioBeatAnalyzer(
     private var worker: Thread? = null
     private var prevEnvelope = 0.0
     private var envelope = 0.0
-    private var rawEnvelope = 0.0
+    private var rmsEnergy = 0.0
+    private var agcPeakEnvelope = 0.0
     private var noiseFloor = 0.0
     private var inputGain = 1.0
+    private var agcSampleCount = 0L
 
     private var beatCount = 0
     private var lastBeatTimeNs = 0L
@@ -94,16 +98,26 @@ class AudioBeatAnalyzer(
     private var startupPeakDiscarded = false
     private val minRefinementBeats = 10
     private val maxRefinementBeats = 40
+    private var refinementBeatLimit = minRefinementBeats
     private var lockedRefractoryMs: Long? = null
+    private var lockedInputGain: Double? = null
+
+    private val agcTargetRms = 0.01
+    private val agcHeadroomFactor = 1.30
+    private val agcMaxGain = 20.0
+    private val agcRmsAdaptation = 0.000005
+    private val agcGainAdaptation = 0.00002
 
     private val lDurations = ArrayDeque<Double>()
     private val rDurations = ArrayDeque<Double>()
     private val beatIntervals = mutableListOf<Double>()
+    private val beatGains = ArrayDeque<Double>()
 
     fun start() {
         if (running) return
         running = true
         worker = thread(name = "AudioBeatAnalyzer", isDaemon = true) {
+            Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
             runLoop()
         }
     }
@@ -138,13 +152,17 @@ class AudioBeatAnalyzer(
         val buffer = ShortArray(maxOf(1024, bufferSize / 4))
         val halfBeatGuessMs = initialGuessPeriodMs / 2.0
         var refractoryMs = (halfBeatGuessMs * 0.4).coerceIn(60.0, 1_600.0).toLong()
+        val audioClockStartNs = System.nanoTime()
+        var audioSampleIndex = 0L
 
         record.startRecording()
         try {
             while (running) {
                 val read = record.read(buffer, 0, buffer.size)
                 if (read <= 0) continue
-                refractoryMs = processAudioBlock(buffer, read, refractoryMs)
+                val blockStartNs = audioClockStartNs + audioSampleIndex * 1_000_000_000L / sampleRate
+                refractoryMs = processAudioBlock(buffer, read, refractoryMs, blockStartNs)
+                audioSampleIndex += read
             }
         } finally {
             if (record.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
@@ -182,31 +200,41 @@ class AudioBeatAnalyzer(
         return null
     }
 
-    private fun processAudioBlock(data: ShortArray, count: Int, refractoryMs: Long): Long {
+    private fun processAudioBlock(
+        data: ShortArray,
+        count: Int,
+        refractoryMs: Long,
+        blockStartNs: Long
+    ): Long {
         var currentRefractoryMs = lockedRefractoryMs ?: refractoryMs
-        val nowNs = System.nanoTime()
         for (i in 0 until count) {
             val sample = data[i] / 32768.0
             val bp = lowPass2.process(lowPass1.process(highPass2.process(highPass1.process(sample))))
             val rectified = abs(bp)
 
-            val rawAttack = 0.45
-            val rawDecay = 0.015
-            rawEnvelope = if (rectified > rawEnvelope) {
-                rawAttack * rectified + (1.0 - rawAttack) * rawEnvelope
+            rmsEnergy += (bp * bp - rmsEnergy) * agcRmsAdaptation
+            agcPeakEnvelope = if (rectified > agcPeakEnvelope) {
+                0.45 * rectified + 0.55 * agcPeakEnvelope
             } else {
-                rawDecay * rectified + (1.0 - rawDecay) * rawEnvelope
+                0.015 * rectified + 0.985 * agcPeakEnvelope
             }
+            agcSampleCount += 1
 
-            if (lockedRefractoryMs != null) {
-                val targetGain = when {
-                    rawEnvelope <= 0.005 -> 8.0
-                    rawEnvelope >= 0.040 -> 1.0
-                    else -> 8.0 - (rawEnvelope - 0.005) * 7.0 / 0.035
-                }
-                inputGain += (targetGain - inputGain) * 0.00001
-            } else {
+            if (lockedInputGain != null) {
+                inputGain = lockedInputGain!!
+            } else if (agcSampleCount < sampleRate) {
                 inputGain = 1.0
+            } else {
+                val rms = kotlin.math.sqrt(rmsEnergy)
+                val rmsGain = if (rms > 0.0) agcTargetRms / rms else agcMaxGain
+                val peakGain = if (agcPeakEnvelope > 0.0) {
+                    1.0 / (agcHeadroomFactor * agcPeakEnvelope)
+                } else {
+                    agcMaxGain
+                }
+                val targetGain = minOf(rmsGain, peakGain).coerceIn(1.0, agcMaxGain)
+                inputGain = (inputGain + (targetGain - inputGain) * agcGainAdaptation)
+                    .coerceIn(1.0, agcMaxGain)
             }
 
             // Fast attack, slower decay envelope.
@@ -224,7 +252,7 @@ class AudioBeatAnalyzer(
             val risingCross = prevEnvelope < threshold && envelope >= threshold
             prevEnvelope = envelope
 
-            val sampleTimeNs = nowNs + (i * 1_000_000_000L / sampleRate)
+            val sampleTimeNs = blockStartNs + (i * 1_000_000_000L / sampleRate)
             if (risingCross && !peakActive) {
                 peakActive = true
                 peakEnvelope = envelope
@@ -249,6 +277,8 @@ class AudioBeatAnalyzer(
 
                     beatCount += 1
                     val beatLabel = if (beatCount % 2 == 1) 'L' else 'R'
+                    beatGains.addLast(inputGain)
+                    while (beatGains.size > 5) beatGains.removeFirst()
                     if (firstBeatTimeNs == 0L) firstBeatTimeNs = beatTimeNs
                     val beatTimeSeconds = (beatTimeNs - firstBeatTimeNs) / 1_000_000_000.0
 
@@ -270,9 +300,14 @@ class AudioBeatAnalyzer(
                     if (
                         lockedRefractoryMs == null &&
                         (beatCount >= maxRefinementBeats ||
-                            (beatCount >= minRefinementBeats && isFitStable()))
+                            (beatCount >= refinementBeatLimit && isFitStable()))
                     ) {
-                        lockedRefractoryMs = currentRefractoryMs
+                        if (beatCount < maxRefinementBeats && isAgcStillChanging()) {
+                            refinementBeatLimit = (refinementBeatLimit + 5).coerceAtMost(maxRefinementBeats)
+                        } else {
+                            lockedRefractoryMs = currentRefractoryMs
+                            lockedInputGain = inputGain
+                        }
                     }
                     emitMetrics(beatLabel, beatTimeSeconds)
                 }
@@ -303,6 +338,13 @@ class AudioBeatAnalyzer(
         return abs(firstMedian - secondMedian) / maxOf(firstMedian, secondMedian) <= 0.02
     }
 
+    private fun isAgcStillChanging(): Boolean {
+        if (beatGains.size < 5) return false
+        val minimum = beatGains.minOrNull() ?: return false
+        val maximum = beatGains.maxOrNull() ?: return false
+        return maximum > minimum * 1.3
+    }
+
     private fun addDuration(queue: ArrayDeque<Double>, value: Double) {
         if (value < 120 || value > 4_000) return
         queue.addLast(value)
@@ -328,11 +370,12 @@ class AudioBeatAnalyzer(
                     acquiring,
                     beatTimeSeconds,
                     meanPeriodStats?.meanPeriodMs ?: 0.0,
-                    meanPeriodStats?.standardDeviationMs ?: 0.0
+                    meanPeriodStats?.standardDeviationMs ?: 0.0,
+                    inputGain
                 )
             )
         } else {
-            onMetrics(BeatMetrics(0.0, 0.0, 0.0, label, true, beatTimeSeconds))
+            onMetrics(BeatMetrics(0.0, 0.0, 0.0, label, true, beatTimeSeconds, agcGain = inputGain))
         }
     }
 

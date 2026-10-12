@@ -2,7 +2,7 @@
 
 ## Project Overview
 Develop an Android application for characterizing the pendulum timing in old clocks
-**License:** GNU General Public License V3.0
+**License:** GNU General Public License V3.0 or later
 
 ## Core Configuration
 - **Target Platform:** Android 11+
@@ -43,7 +43,9 @@ Below that a pulsing dot will shortly light-up blue for a detected **L** beat, a
 The audio stream is acquired with at least 22Khz sampling rate
 A bandpass filter between 600Hz and 5000Hz with a reduction gain of 40dB or more is applied to clean the audio
 The **L** and **R** beats have a typical shape of an oscillating signal, with an envelope rapidly growing and then slowly decaying. There may be beating in the envelope, of a duration around 10ms. **L** and **R** beat may have distinct fit parmeters (for example the base frequency, in the kHz range, may be slight different) although an initial guessing may be the same one
-The beats time position should be detected with a precision of no less than 1ms
+The beats time position should be detected with a precision of no less than 0.1ms
+
+The live `G:` indication shows the automatic gain-control multiplier during acquisition. It is limited to a maximum of 20, includes RMS and peak clipping control with 30% headroom, and is frozen after fit lock.
 
 ## App Icon
 Use the stylized image of an old pendulum clock
@@ -53,7 +55,7 @@ A WAV file si provided as example, to test the fit routines, the correct identif
 In the example file named Clock.wav, the duration of the **L** and **R** sound is around 20ms, and the two beats have a duration each of 560ms and 586ms
 
 ## Licensing
-GNU GPL V3, whatever the latest is . Add notices and required files
+GNU GPL V3.0 or later. Add notices and required files.
 
 ## Update1
 
