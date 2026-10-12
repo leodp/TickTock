@@ -37,7 +37,8 @@ The current app image preview is available at [images/TickTock.jpg](images/TickT
 ## Distribution
 
 - Primary source and releases are on GitHub.
-- The standard release APK is created at `app/build/outputs/apk/release/app-release.apk`.
+- The standard unsigned release APK is created at `app/build/outputs/apk/release/app-release-unsigned.apk`.
+- APKs are not copied to the repository root.
 - Release artifacts should be attached to GitHub releases, not committed into the source tree.
 - F-Droid listing text metadata is available in [fastlane/metadata/android/en-US](fastlane/metadata/android/en-US).
 - F-Droid submission package is available in [fdroid](fdroid).

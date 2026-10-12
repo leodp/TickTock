@@ -13,6 +13,7 @@ All notable changes to TickTock are documented here.
 - Extended the tracking phase when AGC gain is still stabilizing before freezing the gain at lock.
 - Added the live `G:` gain indication; it shows the AGC multiplier and freezes after fit lock.
 - Exported beat timestamps with 0.1 ms precision.
+- Restored the standard unsigned F-Droid release output `app-release-unsigned.apk` without copying APKs to the repository root.
 
 ## 1.0.7 - 2026-10-02
 

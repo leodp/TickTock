@@ -7,7 +7,7 @@ Develop an Android application for characterizing the pendulum timing in old clo
 ## Core Configuration
 - **Target Platform:** Android 11+
 - **App Name:** "TickTock"
-- **APK Output:** `app/build/outputs/apk/release/app-release.apk`
+- **APK Output:** `app/build/outputs/apk/release/app-release-unsigned.apk`
 
 ## Visual Design
 - **Orientation:** Portrait mode
@@ -76,7 +76,7 @@ Make a better icon for the app, with a more clear image of a pendulum clock. The
 Mark the release with the version number 1.0
 Add a readme file for explaining what the app does and how to use it
 Remove the debug apk and assemble a release app
-Attach the standard release APK to the GitHub release; do not commit generated APKs to the source tree.
+Attach the standard release APK to the GitHub release; do not copy APKs to the repository root or commit generated APKs to the source tree.
 
 ## Update2
 
